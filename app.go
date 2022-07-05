@@ -34,7 +34,10 @@ func (app *App) InitalizeCallbacks() {
 	if err != nil {
 		log.Fatalf("failed to ReadFile config.yaml: %s", err)
 	}
-	yaml.Unmarshal(bytes, &app.callbacks)
+	err = yaml.Unmarshal(bytes, &app.callbacks)
+	if err != nil {
+		log.Fatalf("failed to yaml.Unmarshal: %s", err)
+	}
 }
 
 func (app *App) InitializeSlack() {
@@ -82,7 +85,10 @@ func (app *App) RunLoop() {
 		}
 	}()
 
-	app.client.Run()
+	err := app.client.Run()
+	if err != nil {
+		log.Fatalf("failed to Run: %s", err)
+	}
 }
 
 func (app *App) handleMention(e *slackevents.AppMentionEvent) {
