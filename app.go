@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"strings"
@@ -99,10 +100,20 @@ func (app *App) handleMention(e *slackevents.AppMentionEvent) {
 
 func (app *App) handleMessage(e *slackevents.MessageEvent) {
 
+	event, err := json.Marshal(e)
+
+	// slackevents.MessageEven は、元々が JSON だったのを Unmarshal した内ものなので Marshal も成功するはず
+	// Marshal が失敗するケースは特異っぽいので panic() で処理でいい
+	if err != nil {
+		panic(err)
+	}
+
 	if e.Username != REACJI_USERNAME {
-		app.logger.Printf("message was ignored: %s\n", e.Username)
+		app.logger.Printf("message was ignored: %s\n", event)
 		return
 	}
+
+	app.logger.Printf("message will handled: %s\n", event)
 
 	for _, callback := range app.callbacks {
 		if callback.Emoji == e.Icons.Emoji {
