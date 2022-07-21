@@ -33,9 +33,11 @@ func (app *App) Initalize() {
 func (app *App) InitalizeCallbacks() {
 	bytes, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Fatalf("failed to ReadFile config.yaml: %s", err)
+		app.logger.Fatalf("failed to ReadFile config.yaml: %s", err)
 	}
 	yaml.Unmarshal(bytes, &app.callbacks)
+
+	app.logger.Printf("initialized callbacks: %+v\n", app.callbacks)
 }
 
 func (app *App) InitializeSlack() {
@@ -117,6 +119,8 @@ func (app *App) handleMessage(e *slackevents.MessageEvent) {
 
 	for _, callback := range app.callbacks {
 		if callback.Emoji == e.Icons.Emoji {
+
+			app.logger.Printf("Emoji matched: %s\n", e.Icons.Emoji)
 			_, _, err := app.client.PostMessage(
 				e.Channel,
 				slack.MsgOptionText(callback.Message, false),
