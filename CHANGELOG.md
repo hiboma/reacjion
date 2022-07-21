@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.3](https://github.com/hiboma/reacjion/compare/v0.0.2...v0.0.3) (2022-07-21)
+
+* more debug logging [#3](https://github.com/hiboma/reacjion/pull/3) ([hiboma](https://github.com/hiboma))
+
 ## [v0.0.2](https://github.com/hiboma/reacjion/compare/v0.0.1...v0.0.2) (2022-07-21)
 
 * add verbose logging [#2](https://github.com/hiboma/reacjion/pull/2) ([hiboma](https://github.com/hiboma))
