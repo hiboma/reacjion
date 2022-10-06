@@ -1,4 +1,4 @@
-FROM golang:1.18
+FROM golang:1.19.2
 
 WORKDIR /go/src/github.com/hiboma/reacjion/
 COPY . .
