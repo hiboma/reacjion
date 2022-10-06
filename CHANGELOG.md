@@ -4,6 +4,10 @@
 
 * udpate: 1.19.2 [#4](https://github.com/hiboma/reacjion/pull/4) ([hiboma](https://github.com/hiboma))
 
+## [v0.0.4](https://github.com/hiboma/reacjion/compare/v0.0.3...v0.0.4) (2022-10-06)
+
+* udpate: 1.19.2 [#4](https://github.com/hiboma/reacjion/pull/4) ([hiboma](https://github.com/hiboma))
+
 ## [v0.0.3](https://github.com/hiboma/reacjion/compare/v0.0.2...v0.0.3) (2022-07-21)
 
 * more debug logging [#3](https://github.com/hiboma/reacjion/pull/3) ([hiboma](https://github.com/hiboma))
