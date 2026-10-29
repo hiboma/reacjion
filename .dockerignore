@@ -13,3 +13,5 @@ coverage.out
 reacjion
 Dockerfile
 .dockerignore
+*.p12
+id_rsa*
