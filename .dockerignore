@@ -1,0 +1,15 @@
+# Keep secrets and local artifacts out of the build context.
+.env
+.env.*
+!.env.sample
+config.yaml
+*.pem
+*.key
+.wt/
+.serena/
+.claude/
+dist/
+coverage.out
+reacjion
+Dockerfile
+.dockerignore
