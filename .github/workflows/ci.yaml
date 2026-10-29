@@ -30,8 +30,11 @@ jobs:
       - run: go test ./...
       - uses: golang/govulncheck-action@v1.1.0
         with:
+          go-version-input: ''
           go-version-file: go.mod
           go-package: ./...
+          repo-checkout: false
+          cache: false
 
   docker:
     runs-on: ubuntu-latest
