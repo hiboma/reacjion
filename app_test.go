@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -17,13 +18,14 @@ import (
 type fakePoster struct {
 	mu       sync.Mutex
 	channels []string
+	err      error
 }
 
 func (f *fakePoster) PostMessageContext(ctx context.Context, channelID string, options ...slack.MsgOption) (string, string, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.channels = append(f.channels, channelID)
-	return "", "", nil
+	return "", "", f.err
 }
 
 func (f *fakePoster) count() int {
@@ -143,8 +145,8 @@ func TestGuardChannelRestriction(t *testing.T) {
 		channelIDs: map[string]struct{}{"C0ALLOWED": {}},
 	}
 	m := reacji(testReacjiB, "smile")
-	if got := g.checkReacji(m); got != verdictIgnore {
-		t.Errorf("verdict = %v, want ignore for a channel not in the list", got)
+	if got := g.checkReacji(m); got != verdictChannel {
+		t.Errorf("verdict = %v, want channel for a channel not in the list", got)
 	}
 	m.Channel = "C0ALLOWED"
 	if got := g.checkReacji(m); got != verdictTrusted {
@@ -197,13 +199,14 @@ func TestParseIDList(t *testing.T) {
 
 func TestDispatcherDropsWhenFull(t *testing.T) {
 	block := make(chan struct{})
+	started := make(chan struct{}, 2)
 	d := newDispatcher(1, 1, time.Second, func(string, ...interface{}) {})
-	slow := job{kind: "test", run: func(ctx context.Context) error { <-block; return nil }}
+	slow := job{kind: "test", run: func(ctx context.Context) error { started <- struct{}{}; <-block; return nil }}
 
 	if !d.submit(slow, nil) { // taken by the worker
 		t.Fatal("first job was dropped")
 	}
-	time.Sleep(50 * time.Millisecond)
+	<-started
 	if !d.submit(slow, nil) { // fills the queue
 		t.Fatal("second job was dropped")
 	}
@@ -299,5 +302,69 @@ func TestMentionFloodDoesNotStarveReacji(t *testing.T) {
 	}
 	if reacjis != 1 {
 		t.Errorf("reacji posts = %d, want 1", reacjis)
+	}
+}
+
+func TestRejectedSpoofIsLoggedWithoutText(t *testing.T) {
+	app, _, buf := newTestApp(t)
+	app.handleEventsAPI(messageEvent("EvS", testTeam, reacji("B0EVIL", "smile")))
+	app.disp.close()
+	if !strings.Contains(buf.String(), `reason=untrusted_bot bot_id="B0EVIL"`) {
+		t.Errorf("rejection was not logged: %s", buf.String())
+	}
+}
+
+func TestMentionAndAPIErrorDoNotLogText(t *testing.T) {
+	app, p, buf := newTestApp(t)
+	p.err = errors.New("channel_not_found")
+	app.handleEventsAPI(slackevents.EventsAPIEvent{
+		Type:   slackevents.CallbackEvent,
+		TeamID: testTeam,
+		Data:   &slackevents.EventsAPICallbackEvent{EventID: "EvM"},
+		InnerEvent: slackevents.EventsAPIInnerEvent{
+			Type: "app_mention",
+			Data: &slackevents.AppMentionEvent{Channel: "C0CHAN", Text: secretText},
+		},
+	})
+	app.handleEventsAPI(messageEvent("EvR", testTeam, reacji(testReacjiB, "smile")))
+	app.disp.close()
+	logs := buf.String()
+	if !strings.Contains(logs, "failed: kind=reacji") || !strings.Contains(logs, "channel_not_found") {
+		t.Errorf("API error was not logged: %s", logs)
+	}
+	if strings.Contains(logs, secretText) {
+		t.Errorf("message text leaked to logs: %s", logs)
+	}
+}
+
+func TestDroppedEventCanBeRedelivered(t *testing.T) {
+	app, p, _ := newTestApp(t)
+	app.reacjiRL = newRateLimiter(0, 0) // drop everything
+	ev := messageEvent("EvDrop", testTeam, reacji(testReacjiB, "smile"))
+	app.handleEventsAPI(ev)
+	app.reacjiRL = newRateLimiter(1, 1)
+	app.handleEventsAPI(ev) // redelivery
+	app.disp.close()
+	if got := p.count(); got != 1 {
+		t.Errorf("posts = %d, want 1 after redelivery", got)
+	}
+}
+
+func TestRateLimiterRefund(t *testing.T) {
+	now := time.Unix(0, 0)
+	r := newRateLimiter(0, 1)
+	r.now = func() time.Time { return now }
+	r.last = now
+	if !r.allow() {
+		t.Fatal("first token was not allowed")
+	}
+	r.refund()
+	if !r.allow() {
+		t.Error("refunded token was not allowed")
+	}
+	r.refund()
+	r.refund()
+	if r.tokens > r.burst {
+		t.Errorf("tokens = %v, want <= burst %v", r.tokens, r.burst)
 	}
 }

@@ -45,6 +45,7 @@ type verdict int
 const (
 	verdictIgnore  verdict = iota // not a Reacji Channeler message
 	verdictSpoofed                // looks like Reacji Channeler, but the bot ID is not allowed
+	verdictChannel                // allowed bot, but the channel is not allowed
 	verdictTrusted
 )
 
@@ -66,7 +67,7 @@ func (g *guard) checkReacji(e *slackevents.MessageEvent) verdict {
 		return verdictIgnore
 	}
 	if !g.channelAllowed(e.Channel) {
-		return verdictIgnore
+		return verdictChannel
 	}
 	return verdictTrusted
 }

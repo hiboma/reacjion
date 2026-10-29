@@ -21,7 +21,7 @@ Environment variables:
 | `SLACK_BOT_TOKEN` | yes | Bot User OAuth Token (starts with `xoxb`) |
 | `SLACK_APP_TOKEN` | yes | App-Level Token for Socket Mode (starts with `xapp`) |
 | `REACJI_BOT_IDS` | yes | Comma separated bot IDs of Reacji Channeler (`B...`) |
-| `REACJI_CHANNEL_IDS` | no | Comma separated channel IDs to react in. Empty means all channels |
+| `REACJI_CHANNEL_IDS` | no | Comma separated channel IDs to handle. Applies to both Reacji posts and mentions. Empty means all channels |
 | `SLACK_APP_ID` | no | Your app ID (`A...`). Events for other apps are ignored |
 
 ### Finding the bot ID of Reacji Channeler
@@ -32,7 +32,7 @@ because any app or webhook that can post to the channel can set those.
 If `REACJI_BOT_IDS` does not contain the right ID, the bot logs:
 
 ```
-event: type=message event=... result=rejected reason=untrusted_bot bot_id=B0123456789
+event: type=message event=... result=rejected reason=untrusted_bot bot_id="B0123456789"
 ```
 
 Check that the message really came from Reacji Channeler, then add the
@@ -55,8 +55,10 @@ limit than Reacji Channeler posts, so a flood of mentions cannot block them.
 
 ## Logging
 
-Logs contain only the event type, the result, and a hashed event ID.
-Message text is not logged.
+Logs contain the event type, the result, and a hashed event ID. When a
+Reacji-like message is rejected, the `bot_id` and `subtype` are logged too, and
+failed Slack API calls log the API error code. Message text, user IDs and
+tokens are not logged.
 
 > **Warning:** `-debug` logs raw Slack requests and responses, including the
 > **bot token** and message text. Do not use it in production, and do not

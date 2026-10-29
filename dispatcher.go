@@ -117,9 +117,7 @@ func (r *rateLimiter) allow() bool {
 func (r *rateLimiter) refund() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.tokens+1 <= r.burst {
-		r.tokens++
-	}
+	r.tokens = min(r.tokens+1, r.burst)
 }
 
 // dedup remembers event IDs for a while, so that an event that Slack
@@ -134,6 +132,13 @@ type dedup struct {
 
 func newDedup(ttl time.Duration, max int) *dedup {
 	return &dedup{ttl: ttl, max: max, seen: map[string]time.Time{}, now: time.Now}
+}
+
+// forget removes id, so that a redelivery of a dropped event is handled.
+func (d *dedup) forget(id string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	delete(d.seen, id)
 }
 
 // firstTime reports whether id has not been seen within the TTL,

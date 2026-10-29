@@ -85,6 +85,9 @@ func (app *App) InitializeSlack() {
 	if err != nil {
 		app.logger.Fatalf("auth.test failed: %s", err)
 	}
+	if auth.TeamID == "" {
+		app.logger.Fatalf("auth.test returned no team_id")
+	}
 
 	app.guard = &guard{
 		teamID:     auth.TeamID,
@@ -167,6 +170,16 @@ func (app *App) firstTime(kind, rawID string) bool {
 	return false
 }
 
+// submit enqueues a job. If the job is dropped, the event is removed from
+// the dedup table so that Slack can redeliver it.
+func (app *App) submit(rawID string, j job, limiter *rateLimiter) bool {
+	if app.disp.submit(j, limiter) {
+		return true
+	}
+	app.dedup.forget(rawID)
+	return false
+}
+
 func (app *App) handleMention(rawID string, e *slackevents.AppMentionEvent) {
 	id := hashID(rawID)
 	if e == nil || !app.guard.channelAllowed(e.Channel) {
@@ -183,7 +196,7 @@ func (app *App) handleMention(rawID string, e *slackevents.AppMentionEvent) {
 	}
 
 	channel := e.Channel
-	app.disp.submit(job{eventID: id, kind: "app_mention", run: func(ctx context.Context) error {
+	app.submit(rawID, job{eventID: id, kind: "app_mention", run: func(ctx context.Context) error {
 		_, _, err := app.api.PostMessageContext(ctx, channel, slack.MsgOptionText(message, true))
 		return err
 	}}, app.mentionRL)
@@ -195,13 +208,16 @@ func (app *App) handleMessage(rawID string, e *slackevents.MessageEvent) {
 	case verdictIgnore:
 		if e != nil && e.Username == reacjiUsername {
 			// Helps to diagnose a legitimate message that is not accepted.
-			app.logger.Printf("event: type=message event=%s result=ignored reason=not_allowed_bot_message subtype=%q bot_id=%s", id, e.SubType, e.BotID)
+			app.logger.Printf("event: type=message event=%s result=ignored reason=not_allowed_bot_message subtype=%q bot_id=%q", id, e.SubType, e.BotID)
 		}
 		return
 	case verdictSpoofed:
 		// The bot ID is not a secret, and logging it lets the operator
 		// add a legitimate Reacji Channeler to REACJI_BOT_IDS.
-		app.logger.Printf("event: type=message event=%s result=rejected reason=untrusted_bot bot_id=%s", id, e.BotID)
+		app.logger.Printf("event: type=message event=%s result=rejected reason=untrusted_bot bot_id=%q", id, e.BotID)
+		return
+	case verdictChannel:
+		app.logger.Printf("event: type=message event=%s result=ignored reason=channel", id)
 		return
 	}
 	if !app.firstTime("message", rawID) {
@@ -217,7 +233,7 @@ func (app *App) handleMessage(rawID string, e *slackevents.MessageEvent) {
 	channel := e.Channel
 	for _, c := range matched {
 		text := c.Message
-		app.disp.submit(job{eventID: id, kind: "reacji", run: func(ctx context.Context) error {
+		app.submit(rawID, job{eventID: id, kind: "reacji", run: func(ctx context.Context) error {
 			_, _, err := app.api.PostMessageContext(ctx, channel, slack.MsgOptionText(text, false))
 			return err
 		}}, app.reacjiRL)
