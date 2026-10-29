@@ -25,9 +25,9 @@ build:
 	go build -ldflags="$(BUILD_LDFLAGS)"
 
 depsdev:
-	go install github.com/Songmu/ghch/cmd/ghch@latest
-	go install github.com/Songmu/gocredits/cmd/gocredits@latest
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
+	go install github.com/Songmu/ghch/cmd/ghch@v0.11.0
+	go install github.com/Songmu/gocredits/cmd/gocredits@v1.1.0
+	go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
 
 prerelease:
 	git pull origin main --tag

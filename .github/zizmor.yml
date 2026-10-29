@@ -1,0 +1,7 @@
+# Actions are pinned to commit SHAs (including transitive dependencies)
+# by .github/workflows/actions.lock, so tag references are allowed here.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin

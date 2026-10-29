@@ -4,3 +4,11 @@ reacjion
 config.yaml
 .env
 coverage.out
+.wt/
+.serena/
+*.pem
+*.key
+.env.*
+!.env.sample
+*.p12
+id_rsa*
