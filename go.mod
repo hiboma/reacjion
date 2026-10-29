@@ -3,7 +3,7 @@ module hiboma/reacjion
 go 1.27
 
 require (
-	github.com/joho/godotenv v1.4.0
+	github.com/joho/godotenv v1.5.1
 	github.com/slack-go/slack v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
 )
