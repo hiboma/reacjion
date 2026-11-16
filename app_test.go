@@ -81,7 +81,7 @@ func reacji(botID, emoji string) *slackevents.MessageEvent {
 		Username: reacjiUsername,
 	}
 	if emoji != "" {
-		m.Icons = &slackevents.Icon{Emoji: emoji}
+		m.Icons = &slackevents.Icon{IconEmoji: emoji}
 	}
 	return m
 }
@@ -99,7 +99,7 @@ func TestHandleEventsAPI(t *testing.T) {
 		{"unknown emoji is ignored", messageEvent("Ev5", testTeam, reacji(testReacjiB, "cry")), 0},
 		{"user message is ignored", messageEvent("Ev6", testTeam, &slackevents.MessageEvent{
 			Channel: "C0CHAN", Text: secretText, User: "U0USER", Username: reacjiUsername,
-			Icons: &slackevents.Icon{Emoji: "smile"},
+			Icons: &slackevents.Icon{IconEmoji: "smile"},
 		}), 0},
 		{"nil message does not panic", messageEvent("Ev7", testTeam, nil), 0},
 		{"plain bot post without subtype posts", messageEvent("Ev8", testTeam, func() *slackevents.MessageEvent {

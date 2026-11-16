@@ -77,7 +77,7 @@ func iconEmoji(e *slackevents.MessageEvent) string {
 	if e == nil || e.Icons == nil {
 		return ""
 	}
-	return e.Icons.Emoji
+	return e.Icons.IconEmoji
 }
 
 func matchCallbacks(callbacks []Callback, emoji string) []Callback {

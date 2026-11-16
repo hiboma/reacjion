@@ -25,6 +25,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: docker/setup-buildx-action@v4.4.1
+        with:
+          driver-opts: image=moby/buildkit:v0.35.0@sha256:aa632b921ef07411d2cb77292cd34213d4f7b384001d6fceef1e1f25bf9752bb
       - uses: docker/metadata-action@v6.2.0
         id: meta
         with:
@@ -32,7 +34,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-      - uses: docker/login-action@v4.7.0
+      - uses: docker/login-action@v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -43,7 +45,7 @@ jobs:
           context: .
           push: true
           provenance: mode=max
-          sbom: true
+          sbom: generator=docker/buildkit-syft-scanner:1.12.1@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - uses: actions/attest-build-provenance@v4.2.2
