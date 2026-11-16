@@ -123,6 +123,12 @@ func (app *App) RunLoop() {
 				app.logger.Printf("event: result=ignored reason=unexpected_data")
 				continue
 			}
+			if event.Request != nil {
+				if err := restoreReacjiIcon(&eventsAPIEvent, event.Request.Payload); err != nil {
+					app.logger.Printf("event: result=ignored reason=invalid_message_icons")
+					continue
+				}
+			}
 			app.handleEventsAPI(eventsAPIEvent)
 		}
 	}()

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v4"
 )
 
 type Callback struct {
@@ -25,10 +27,16 @@ func loadCallbacks(path string) ([]Callback, error) {
 	return parseCallbacks(bytes)
 }
 
-func parseCallbacks(bytes []byte) ([]Callback, error) {
+func parseCallbacks(data []byte) ([]Callback, error) {
 	var callbacks []Callback
-	if err := yaml.UnmarshalStrict(bytes, &callbacks); err != nil {
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(&callbacks); err != nil {
 		return nil, fmt.Errorf("failed to parse callbacks: %w", err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return nil, errors.New("expected exactly one YAML document")
 	}
 	if len(callbacks) == 0 {
 		return nil, errors.New("no callbacks are defined")
