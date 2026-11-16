@@ -15,3 +15,6 @@ Dockerfile
 .dockerignore
 *.p12
 id_rsa*
+
+# Do not copy repository metadata or worktree pointers into the build.
+.git

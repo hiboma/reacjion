@@ -68,3 +68,27 @@ tokens are not logged.
 
 The image runs as uid 10001. A mounted `config.yaml` must be readable by
 that user.
+
+
+## Development and dependency integrity
+
+Use Go 1.27.4 or newer. Run `go test -race ./...`, `go vet ./...`,
+`go mod verify`, and `govulncheck ./...` before submitting a change.
+The bot uses the upstream slack-go SDK; a small Socket Mode adapter preserves
+Reacji Channeler's `icons.emoji` field without maintaining a fork.
+Configuration uses the maintained `go.yaml.in/yaml/v4` module and rejects
+unknown fields, duplicate mapping keys, and multiple YAML documents.
+
+GitHub Actions dependencies, including composite actions, are pinned by
+`.github/workflows/actions.lock`. After changing an action version, regenerate
+the lock with `gh actions-lock` and check it with `gh actions-lock --verify`.
+BuildKit and the release SBOM generator are additionally pinned by image digest
+in the workflows. When updating these images, review the upstream release and
+resolve the digest from the upstream registry before editing both workflows.
+The runtime image uses the CA bundle already present in its pinned Alpine base;
+its build does not install packages from a mutable APK repository.
+
+CI builds and tests changes without publishing images. The tag-triggered image
+workflow publishes an SBOM and provenance attestation; it requires the existing
+release-tag protections. These checks do not replace review of dependency and
+lockfile changes.
